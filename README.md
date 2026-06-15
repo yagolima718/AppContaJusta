@@ -2,7 +2,7 @@
 
 Aplicativo mobile desenvolvido em **React Native com Expo** para controle de gastos em estabelecimentos como bares e restaurantes.
 
-O projeto foi construído com foco na implementação de **regras reais de negócio**, incluindo controle de consumo, rastreabilidade de alterações, persistência local de dados e geração de relatórios em PDF.
+O projeto foi construído com foco na implementação de **regras reais de negócio**, incluindo controle de consumo, rastreabilidade de alterações, persistência local de dados e geração de relatórios em PDF com discriminação de taxas.
 
 ---
 
@@ -15,16 +15,16 @@ O projeto foi construído com foco na implementação de **regras reais de negó
 - Incremento e decremento de unidades em tempo real
 - Histórico detalhado por item com registro de alterações e horários
 - Cálculo automático do total da conta
-- Aplicação opcional de **taxa de serviço**
-- Fechamento e reabertura de conta
+- Aplicação opcional e dinâmica de **taxa de serviço** (com exibição no histórico)
+- Fechamento e reabertura de conta em tempo real
 - Persistência local utilizando **AsyncStorage**
-- Controle de integridade dos dados com IDs únicos
-- Visualização de histórico de contas
-- Geração de PDF por conta com detalhamento completo:
-  - Item
-  - Quantidade
-  - Valor unitário
-  - Total por item
+- Controle de integridade dos dados com IDs únicos (`react-native-uuid`)
+- Gerenciamento do histórico de contas (Visualização e **Exclusão com confirmação**)
+- Geração de PDF por conta com detalhamento completo enviado via WhatsApp/Compartilhamento:
+  - Item, Quantidade e Valor unitário
+  - Subtotal dos itens
+  - Valor exato cobrado pela taxa de serviço aplicado
+  - Total geral calculado
 
 ---
 
@@ -37,6 +37,7 @@ O projeto foi construído com foco na implementação de **regras reais de negó
 - AsyncStorage
 - Expo Print
 - Expo Sharing
+- React Native UUID
 
 ---
 
@@ -113,32 +114,28 @@ Após iniciar o projeto você poderá:
 
 # Funcionalidades Técnicas Implementadas
 
-Durante o desenvolvimento deste projeto foram aplicados conceitos importantes de desenvolvimento mobile:
-
-- Organização de componentes reutilizáveis
-- Separação de responsabilidades (screens, components, services, types)
-- Manipulação de estado com React Hooks
-- Tipagem forte com TypeScript
-- Persistência de dados no dispositivo com AsyncStorage
-- Controle de integridade com IDs únicos para evitar inconsistência
-- Rastreamento completo de alterações em itens
-- Cálculo dinâmico de valores com taxa de serviço
-- Controle de estados da conta (aberta, fechada, reaberta)
-- Geração de relatórios em PDF com dados estruturados
+- Durante o desenvolvimento deste projeto foram aplicados conceitos importantes de desenvolvimento mobile:
+- Organização de componentes reutilizáveis e desacoplados.
+- Separação clara de responsabilidades (screens, components, services, types).
+- Manipulação de estados complexos e contorno de assincronismo com React Hooks.
+- Tipagem forte com TypeScript mitigando erros em tempo de desenvolvimento.
+- Persistência de dados segura no dispositivo com AsyncStorage.
+- Controle de integridade com IDs únicos para evitar inconsistência de registros.
+- Rastreamento completo de mutações e ações em itens.
+- Validação física e remoção segura de dados do banco local com confirmação em tela (Alert).
+- Geração estruturada de documentos utilizando templates HTML dinâmicos convertidos em PDF.
 ---
 
 # Possíveis Melhorias Futuras
 
-Algumas evoluções que podem ser implementadas no projeto:
+Algumas evoluções planejadas para o ecossistema do app:
 
-- Edição de itens já lançados
-- Exclusão de itens
-- Divisão da conta por pessoas
-- Sincronização com backend (API REST)
-- Estatísticas e gráficos de gastos
-- Autenticação de usuário
-- Tema escuro (Dark Mode)
-- Exportação de relatórios mais avançados
+- Edição de itens já lançados na lista.
+- Divisão inteligente da conta por quantidade de pessoas na mesa.
+- Integração e sincronização com banco de dados em nuvem (API REST).
+- Dashboard com estatísticas e gráficos de gastos mensais.
+- Autenticação de usuário (Login/Signup).
+- Suporte a Tema Escuro (Dark Mode).
 
 ---
 
@@ -146,4 +143,4 @@ Algumas evoluções que podem ser implementadas no projeto:
 
 **Yago Lima**
 
-Projeto desenvolvido com foco em prática de desenvolvimento mobile, aplicando conceitos de estado, persistência, integridade de dados e geração de relatórios.
+Projeto desenvolvido com foco em prática profunda de desenvolvimento mobile, aplicando conceitos de estado, persistência, tratamento de dados, regras de negócio reais e geração de relatórios funcionais.
