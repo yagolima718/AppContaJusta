@@ -71,7 +71,7 @@ src
 ### 1 Clonar o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/ControlaGastos.git
+git clone https://github.com/yagolima718/AppContaJusta.git
 ```
 
 ---
@@ -79,7 +79,7 @@ git clone https://github.com/seu-usuario/ControlaGastos.git
 ### 2 Entrar na pasta do projeto
 
 ```bash
-cd ControlaGastos
+cd ContaJusta
 ```
 
 ---
