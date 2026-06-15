@@ -31,6 +31,13 @@ export async function carregarHistorico(): Promise<Conta[]> {
   return JSON.parse(dados)
 }
 
+// REMOVE UMA CONTA ESPECÍFICA DO HISTÓRICO PELO ID
+export async function excluirConta(id: string) {
+  const historico = await carregarHistorico()
+  const novoHistorico = historico.filter(conta => conta.id !== id)
+  await AsyncStorage.setItem(HISTORICO_KEY, JSON.stringify(novoHistorico))
+}
+
 // Opcional: limpar todo histórico
 export async function limparHistorico() {
   await AsyncStorage.removeItem(HISTORICO_KEY)

@@ -32,29 +32,26 @@ export default function LancarGastosScreen() {
   const totalItens = itens.reduce((acc, item) => acc + item.valor * item.quantidade, 0)
   const totalFinal = totalItens + (totalItens * taxaServico) / 100
 
-  function converterValor(valorString: string) {
-    const normalizado = valorString.replace(",", ".")
-    const numero = parseFloat(normalizado)
-    if (isNaN(numero)) return null
-    return numero
+  function converterValor(texto: string): number {
+    const formatado = texto.replace(",", ".")
+    const numero = parseFloat(formatado)
+    return isNaN(numero) ? 0 : numero
   }
 
   function adicionarItem() {
-    if (contaFechada) return
-    if (!descricao || !valor) return
+    if (!descricao.trim() || !valor.trim()) return
 
-    const valorConvertido = converterValor(valor)
-    if (valorConvertido === null) {
-      alert("Valor inválido")
-      return
-    }
+    const valorNumerico = converterValor(valor)
+    if (valorNumerico <= 0) return
+
+    const hora = new Date().toLocaleTimeString()
 
     const novoItem: Item = {
       id: uuid.v4().toString(),
       descricao,
-      valor: valorConvertido,
+      valor: valorNumerico,
       quantidade: 1,
-      historico: [`Item criado (${descricao}) às ${new Date().toLocaleTimeString()}`]
+      historico: [`[${hora}] Item criado com Qtd 1`]
     }
 
     setItens([...itens, novoItem])
@@ -62,37 +59,36 @@ export default function LancarGastosScreen() {
     setValor("")
   }
 
-  function adicionarQuantidade(id: string) {
+  function alterarQuantidade(id: string, operacao: "somar" | "subtrair") {
     if (contaFechada) return
-    setItens(itens.map(item => {
+
+    const hora = new Date().toLocaleTimeString()
+
+    const novosItens = itens.map(item => {
       if (item.id === id) {
+        let novaQtd = item.quantidade
+        let acao = ""
+
+        if (operacao === "somar") {
+          novaQtd += 1
+          acao = "incrementado"
+        } else if (operacao === "subtrair" && item.quantidade > 1) {
+          novaQtd -= 1
+          acao = "decrementado"
+        } else {
+          return item
+        }
+
         return {
           ...item,
-          quantidade: item.quantidade + 1,
-          historico: [...item.historico, `+1 unidade às ${new Date().toLocaleTimeString()}`]
+          quantidade: novaQtd,
+          historico: [...item.historico, `[${hora}] Qtd ${acao} para ${novaQtd}`]
         }
       }
       return item
-    }))
-  }
+    })
 
-  function removerQuantidade(id: string) {
-    if (contaFechada) return
-    setItens(itens.map(item => {
-      if (item.id === id && item.quantidade > 0) {
-        return {
-          ...item,
-          quantidade: item.quantidade - 1,
-          historico: [...item.historico, `-1 unidade às ${new Date().toLocaleTimeString()}`]
-        }
-      }
-      return item
-    }))
-  }
-
-  function abrirHistorico(item: Item) {
-    setItemSelecionado(item)
-    setModalHistorico(true)
+    setItens(novosItens)
   }
 
   async function fecharConta(taxa: number) {
@@ -100,13 +96,15 @@ export default function LancarGastosScreen() {
 
     setTaxaServico(taxa)
 
+    const totalComTaxa = totalItens + (totalItens * taxa) / 100
+
     const conta: Conta = {
       id: contaId ?? uuid.v4().toString(),
-      local,
+      local: local.trim() === "" ? "Sem Nome" : local,
       data: new Date().toISOString(),
       itens,
       taxaServico: taxa,
-      total: totalFinal
+      total: totalComTaxa
     }
 
     await salvarConta(conta)
@@ -115,102 +113,119 @@ export default function LancarGastosScreen() {
     setContaId(conta.id)
   }
 
-  function reabrirConta() {
-    if (!contaId) return
+  // FUNÇÃO PARA REABRIR A CONTA SE FECHADA SEM QUERER
+  async function reabrirConta() {
+    if (!contaFechada || !contaId) return
+
     setContaFechada(false)
+    setTaxaServico(0) // Zera a taxa temporariamente para o cálculo dinâmico da tela
+
+    const conta: Conta = {
+      id: contaId,
+      local: local.trim() === "" ? "Sem Nome" : local,
+      data: new Date().toISOString(),
+      itens,
+      taxaServico: 0,
+      total: totalItens
+    }
+
+    await salvarConta(conta)
   }
 
   function iniciarNovaConta() {
     setLocal("")
-    setItens([])
     setDescricao("")
     setValor("")
+    setItens([])
     setContaFechada(false)
     setContaId(null)
     setTaxaServico(0)
   }
 
-  function renderItem({ item }: { item: Item }) {
-    return (
-      <ItemCard
-        item={item}
-        onAdd={() => adicionarQuantidade(item.id)}
-        onRemove={() => removerQuantidade(item.id)}
-        onHistorico={() => abrirHistorico(item)}
-      />
-    )
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Lançar gastos</Text>
+      <Text style={styles.titulo}>Lançar Gastos</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Nome do estabelecimento"
         value={local}
-        editable={!contaFechada}
         onChangeText={setLocal}
+        editable={!contaFechada}
       />
 
       <View style={styles.linhaInputs}>
         <TextInput
           style={[styles.input, styles.inputDescricao]}
-          placeholder="Descrição"
+          placeholder="Descrição do produto"
           value={descricao}
-          editable={!contaFechada}
           onChangeText={setDescricao}
+          editable={!contaFechada}
         />
-
         <TextInput
           style={[styles.input, styles.inputValor]}
           placeholder="Valor"
-          keyboardType="decimal-pad"
           value={valor}
-          editable={!contaFechada}
+          keyboardType="numeric"
           onChangeText={setValor}
+          editable={!contaFechada}
         />
       </View>
 
       <TouchableOpacity
-        style={styles.botaoAdicionar}
+        style={[styles.botaoAdicionar, contaFechada && { backgroundColor: "#95a5a6" }]}
         onPress={adicionarItem}
         disabled={contaFechada}
       >
-        <Text style={styles.botaoTexto}>Adicionar item</Text>
+        <Text style={styles.botaoTexto}>Adicionar Item</Text>
       </TouchableOpacity>
-
-      {local !== "" && <Text style={styles.localBar}>📍 {local}</Text>}
 
       <FlatList
         data={itens}
-        renderItem={renderItem}
         keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <ItemCard
+            item={item}
+            onAdd={() => alterarQuantidade(item.id, "somar")}
+            onRemove={() => alterarQuantidade(item.id, "subtrair")}
+            onHistorico={() => {
+              setItemSelecionado(item)
+              setModalHistorico(true)
+            }}
+          />
+        )}
       />
 
       <View style={styles.rodape}>
-        <Text style={styles.total}>Total: R$ {totalFinal.toFixed(2)}</Text>
+        <Text style={styles.totalTexto}>Total Itens: R$ {totalItens.toFixed(2)}</Text>
+        {taxaServico > 0 && (
+          <Text style={styles.taxaTexto}>Taxa de Serviço ({taxaServico}%): R$ {((totalItens * taxaServico) / 100).toFixed(2)}</Text>
+        )}
+        <Text style={styles.totalGeralTexto}>Total Geral: R$ {totalFinal.toFixed(2)}</Text>
 
-        {!contaFechada ? (
+        {!contaFechada && itens.length > 0 && (
           <TouchableOpacity
-            style={styles.botaoFechar}
+            style={[styles.botaoFechar, { marginTop: 10 }]}
             onPress={() => setModalFechar(true)}
           >
-            <Text style={styles.botaoTexto}>Fechar conta</Text>
+            <Text style={styles.botaoTexto}>Fechar Conta</Text>
           </TouchableOpacity>
-        ) : (
+        )}
+
+        {/* BOTÃO REABRIR CONTA DE VOLTA NO LAYOUT */}
+        {contaFechada && (
           <TouchableOpacity
-            style={styles.botaoReabrir}
+            style={[styles.botaoReabrir, { marginTop: 10 }]}
             onPress={reabrirConta}
           >
-            <Text style={styles.botaoTexto}>Reabrir conta</Text>
+            <Text style={styles.botaoTexto}>Reabrir Conta</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <FecharContaModal
         visible={modalFechar}
-        total={totalFinal}
+        total={totalItens}
         onConfirm={fecharConta}
         onClose={() => setModalFechar(false)}
       />
@@ -222,7 +237,7 @@ export default function LancarGastosScreen() {
       />
 
       <TouchableOpacity
-        style={[styles.botaoAdicionar, { marginTop: 10, backgroundColor: "#34495e" }]}
+        style={[styles.botaoNovaConta, { marginTop: 10 }]}
         onPress={iniciarNovaConta}
       >
         <Text style={styles.botaoTexto}>Nova Conta</Text>
@@ -239,10 +254,12 @@ const styles = StyleSheet.create({
   inputDescricao: { flex: 2 },
   inputValor: { flex: 1 },
   botaoAdicionar: { backgroundColor: "#27ae60", padding: 12, borderRadius: 8, marginBottom: 15 },
+  botaoFechar: { backgroundColor: "#2e86de", padding: 12, borderRadius: 8 },
+  botaoReabrir: { backgroundColor: "#e67e22", padding: 12, borderRadius: 8 },
+  botaoNovaConta: { backgroundColor: "#34495e", padding: 12, borderRadius: 8 },
   botaoTexto: { color: "white", textAlign: "center", fontWeight: "bold" },
-  localBar: { marginBottom: 10, color: "#666" },
-  rodape: { marginTop: 10, borderTopWidth: 1, paddingTop: 10 },
-  total: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  botaoFechar: { backgroundColor: "#e74c3c", padding: 12, borderRadius: 8 },
-  botaoReabrir: { backgroundColor: "#f39c12", padding: 12, borderRadius: 8 }
+  rodape: { marginTop: 10, padding: 15, backgroundColor: "#f8f9fa", borderRadius: 8 },
+  totalTexto: { fontSize: 16 },
+  taxaTexto: { fontSize: 14, color: "#7f8c8d", marginVertical: 2 },
+  totalGeralTexto: { fontSize: 18, fontWeight: "bold", color: "#2e86de", marginTop: 4 }
 })
